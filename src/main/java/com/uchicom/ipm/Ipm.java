@@ -6,6 +6,7 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,7 +70,7 @@ public class Ipm {
 					try {
 						// ブロードキャストアドレスと、他のネットワークへの直IP
 						socket.receive(packet);
-						Message message = new Message(new String(packet.getData(), 0, packet.getLength(), "SJIS"),
+						Message message = new Message(Arrays.copyOf(packet.getData(), packet.getLength()),
 								packet.getAddress(), packet.getPort());
 						List<ReceiveListener> listenerList = map.get(message.getMode());
 						if (listenerList != null) {
@@ -124,7 +125,7 @@ public class Ipm {
 						// ブロードキャストアドレスと、他のネットワークへの直IP
 						broadcastSocket.receive(packet);
 
-						Message message = new Message(new String(packet.getData(), 0, packet.getLength(), "SJIS"),
+						Message message = new Message(Arrays.copyOf(packet.getData(), packet.getLength()),
 								packet.getAddress(), packet.getPort());
 						List<ReceiveListener> listenerList = map.get(message.getMode());
 						if (listenerList != null) {
@@ -138,7 +139,7 @@ public class Ipm {
 					} catch (IOException e) {
 						e.printStackTrace();
 						// このエラー処理はここじゃなくてソケット作成時
-						networkListenerList.forEach(listener->{
+						networkListenerList.forEach(listener -> {
 							listener.error(true);
 						});
 						wait *= 10;
@@ -188,6 +189,7 @@ public class Ipm {
 	public void removeUserListener(UserListener userListener) {
 		userListenerList.remove(userListener);
 	}
+
 	public void addNetworkListener(NetworkListener networkListener) {
 		networkListenerList.add(networkListener);
 	}
@@ -227,7 +229,7 @@ public class Ipm {
 		});
 		thread.start();
 	}
-	
+
 	public int replaceUser(User user) {
 		int index = userList.indexOf(user);
 		if (index >= 0) {
@@ -249,6 +251,7 @@ public class Ipm {
 
 	/**
 	 * TODO 変更があった場合対応できない。
+	 * 
 	 * @param user
 	 * @return
 	 */
@@ -275,6 +278,7 @@ public class Ipm {
 			listener.changed(new UserChangeEvent(UserChangeEvent.Type.CLEARED, 0, users.length - 1, users));
 		}
 	}
+
 	public User removeUser(User user) {
 		if (userList.contains(user)) {
 			int index = userList.indexOf(user);
@@ -311,5 +315,14 @@ public class Ipm {
 
 	public List<User> getUserList() {
 		return userList;
+	}
+
+	public User getUser(User keyUser) {
+		for (User user : userList) {
+			if (user.getInetAddress().equals(keyUser.getInetAddress()) && user.getHost().equals(keyUser.getHost())) {
+				return user;
+			}
+		}
+		return null;
 	}
 }

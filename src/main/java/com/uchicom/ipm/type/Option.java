@@ -44,6 +44,9 @@ public enum Option {
 		return value;
 	}
 
+	public static boolean is(int value, Option option) {
+		return (value & option.value) == option.value;
+	}
 	public static Option of(int value) {
 		for (Option option : values()) {
 			if ((option.value & value) != 0) {

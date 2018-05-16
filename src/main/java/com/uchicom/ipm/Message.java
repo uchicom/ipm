@@ -10,27 +10,55 @@ import com.uchicom.ipm.type.Option;
 public class Message {
 
 	private Message() {
-		
+
 	}
-	public Message(String message, InetAddress address, int port) {
+
+	public Message(byte[] bytes, InetAddress address, int port) {
 		this.address = address;
 		this.port = port;
+		int index = 0;
+		
+		String message = null;
+		int firstIndex = 0;
+		for (;index < bytes.length; index++) {
+			if (bytes[index] == 0) {
+				if (message == null) {
+					try {
+						message = new String(bytes, 0, index, "SJIS");
+						System.out.println("[" + message + "]");
+						firstIndex = index;
+					} catch (UnsupportedEncodingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} else {
+					try {
+						group = new String(bytes, firstIndex + 1, index - firstIndex - 1, "SJIS");
+						System.out.println("[" + group + "]");
+					} catch (UnsupportedEncodingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+		}
 		String[] splits = message.split(":");
 		version = Integer.parseInt(splits[0]);
 		packetNo = Long.parseLong(splits[1]);
 		userName = splits[2];
 		hostName = splits[3];
 		command = Integer.parseInt(splits[4]);
-		
+
 		if (splits.length > 5) {
 			body = splits[5];
 		}
 
 	}
+
 	private InetAddress address;
 
 	private int port;
-	
+
 	private int version = 1;
 
 	private long packetNo;
@@ -43,19 +71,25 @@ public class Message {
 
 	private String body;
 
+	private String group;
+
 	public InetAddress getAddress() {
 		return address;
 	}
+
 	public void setAddress(InetAddress address) {
 		this.address = address;
 	}
+
 	public int getPort() {
 		return port;
 	}
+
 	public void setPort(int port) {
 		this.port = port;
 	}
-	public boolean is(Mode mode, Option...options) {
+
+	public boolean is(Mode mode, Option... options) {
 		if (Mode.of(command) == mode) {
 			for (Option option : options) {
 				if (!mode.is(option, command)) {
@@ -66,11 +100,13 @@ public class Message {
 		}
 		return false;
 	}
+
 	public boolean is(Mode mode) {
 		return Mode.of(command) == mode;
 	}
+
 	public boolean is(Option option) {
-		return Option.of(command) == option;
+		return Option.is(command, option);
 	}
 
 	public int getVersion() {
@@ -110,26 +146,29 @@ public class Message {
 	}
 
 	public void setMode(Mode mode) {
-		command = command & 0xFFFFFF00 | mode.getValue() ;
+		command = command & 0xFFFFFF00 | mode.getValue();
 	}
 
 	public Option getOption() {
-		return Option.of(command);//TODO 複数あるのでoptionsで配列かリストで返す。
+		return Option.of(command);// TODO 複数あるのでoptionsで配列かリストで返す。
 	}
 
 	public void clearOption() {
-		command &= 0x000000FF; //not and
+		command &= 0x000000FF; // not and
 	}
 
 	public void removeOption(Option option) {
 		command &= 0x000000FF;
 	}
+
 	public void setOption(Option option) {
 		command = command & 0x000000FF | option.getValue();
 	}
+
 	public void addOption(Option option) {
 		command |= option.getValue();
 	}
+
 	public String getBody() {
 		return body;
 	}
@@ -166,8 +205,9 @@ public class Message {
 			return version + ":" + packetNo + ":" + userName + ":" + hostName + ":" + command + ":" + body;
 		}
 	}
+
 	public static class Builder {
-		
+
 		private InetAddress inetAddress;
 		private int port;
 		private long packetNo;
@@ -175,22 +215,27 @@ public class Message {
 		private String hostName;
 		private int command;
 		private String extra;
+
 		public Builder(User user) {
 			this.inetAddress = user.getInetAddress();
 			this.port = user.getPort();
 		}
+
 		public Builder packetNo(long packetNo) {
-			this.packetNo= packetNo;
+			this.packetNo = packetNo;
 			return this;
 		}
+
 		public Builder hostName(String hostName) {
 			this.hostName = hostName;
 			return this;
 		}
+
 		public Builder userName(String userName) {
 			this.userName = userName;
 			return this;
 		}
+
 		public Builder mode(Mode mode) {
 			command = (command & 0xFFFFFF00) | mode.getValue();
 			return this;
@@ -200,13 +245,12 @@ public class Message {
 			command |= option.getValue();
 			return this;
 		}
-		
 
 		public Builder extra(String extra) {
 			this.extra = extra;
 			return this;
 		}
-		
+
 		public Message build() {
 			Message message = new Message();
 			message.address = inetAddress;
@@ -218,7 +262,6 @@ public class Message {
 			message.body = extra;
 			return message;
 		}
-		
-		
+
 	}
 }
