@@ -125,6 +125,7 @@ public class Ipm {
 						// ブロードキャストアドレスと、他のネットワークへの直IP
 						broadcastSocket.receive(packet);
 
+						System.out.println(packet.getLength());
 						Message message = new Message(Arrays.copyOf(packet.getData(), packet.getLength()),
 								packet.getAddress(), packet.getPort());
 						List<ReceiveListener> listenerList = map.get(message.getMode());
